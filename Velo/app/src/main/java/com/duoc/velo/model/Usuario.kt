@@ -11,6 +11,6 @@ class Usuario(
     var apellido: String,
     var email: String,
     var telefono: String,
-    var contraseña: String
+    var password: String
 ) {
 }
