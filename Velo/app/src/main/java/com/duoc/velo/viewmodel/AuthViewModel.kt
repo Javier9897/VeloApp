@@ -1,0 +1,75 @@
+package com.duoc.velo.viewmodel
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.duoc.velo.model.Usuario
+import com.duoc.velo.repository.UsuarioRepository
+import kotlinx.coroutines.launch
+
+class AuthViewModel(private val repository: UsuarioRepository): ViewModel(){
+
+    // Estados del login
+    var loginEmail by mutableStateOf("")
+    var loginPassword by mutableStateOf("")
+    var loginError by mutableStateOf<String?>(null)
+
+    // Estados del registro
+    var regRut by mutableStateOf("")
+    var regNombre by mutableStateOf("")
+    var regApellido by mutableStateOf("")
+    var regEmail by mutableStateOf("")
+    var regTelefono by mutableStateOf("")
+    var regPassword by mutableStateOf("")
+    var regError by mutableStateOf<String?>(null)
+
+    var usuarioAutenticado by mutableStateOf<Usuario?>(null)
+        private set
+
+    fun iniciarSesion(onSuccess : () -> Unit){
+        if(loginEmail.isBlank() || loginPassword.isBlank()){
+            loginError = "Porfavor, complete todos los campos"
+            return
+        }
+
+        viewModelScope.launch {
+            val usuario = repository.veriflogin(loginEmail.trim(), loginPassword.trim())
+            if(usuario != null){
+                usuarioAutenticado = usuario
+                loginError = null
+                onSuccess()
+            }else{
+                loginError = "Correo o contraseña incorrectas"
+            }
+        }
+    }
+
+    fun registrarUsuario(onSuccess: () -> Unit){
+        if(regRut.isBlank() || regNombre.isBlank() || regApellido.isBlank() || regEmail.isBlank() ||
+            regTelefono.isBlank() || regPassword.isBlank()
+            ){
+            regError = "Tienes que rellenar todos los campos"
+            return
+        }
+        viewModelScope.launch {
+            val usuarioExistente = repository.obtenerUsuarioPorRut(regRut.trim())
+            if(usuarioExistente != null){
+                regError = "El Rut ingresado ya esta registrado"
+                return@launch
+            }
+            val nuevoUsuario = Usuario(
+                rut = regRut.trim(),
+                nombre = regNombre.trim(),
+                apellido = regApellido.trim(),
+                email = regEmail.trim(),
+                telefono = regTelefono.trim(),
+                password = regPassword.trim()
+            )
+            repository.registrarUsuario(nuevoUsuario)
+            regError = null
+            onSuccess()
+        }
+    }
+}
