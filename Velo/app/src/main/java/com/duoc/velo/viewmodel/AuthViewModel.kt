@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.duoc.velo.model.Usuario
 import com.duoc.velo.repository.UsuarioRepository
@@ -11,12 +12,12 @@ import kotlinx.coroutines.launch
 
 class AuthViewModel(private val repository: UsuarioRepository): ViewModel(){
 
-    // Estados del login
-    var loginEmail by mutableStateOf("")
+    // Login
+    var loginEmail by mutableStateOf("")   // acepta email o rut
     var loginPassword by mutableStateOf("")
     var loginError by mutableStateOf<String?>(null)
 
-    // Estados del registro
+    // Registro
     var regRut by mutableStateOf("")
     var regNombre by mutableStateOf("")
     var regApellido by mutableStateOf("")
@@ -49,7 +50,7 @@ class AuthViewModel(private val repository: UsuarioRepository): ViewModel(){
     fun registrarUsuario(onSuccess: () -> Unit){
         if(regRut.isBlank() || regNombre.isBlank() || regApellido.isBlank() || regEmail.isBlank() ||
             regTelefono.isBlank() || regPassword.isBlank()
-            ){
+        ){
             regError = "Tienes que rellenar todos los campos"
             return
         }
@@ -57,6 +58,10 @@ class AuthViewModel(private val repository: UsuarioRepository): ViewModel(){
             val usuarioExistente = repository.obtenerUsuarioPorRut(regRut.trim())
             if(usuarioExistente != null){
                 regError = "El Rut ingresado ya esta registrado"
+                return@launch
+            }
+            if(repository.obtenerUsuarioPorEmail(regEmail.trim()) != null){
+                regError = "El correo ingresado ya esta registrado"
                 return@launch
             }
             val nuevoUsuario = Usuario(
@@ -69,7 +74,19 @@ class AuthViewModel(private val repository: UsuarioRepository): ViewModel(){
             )
             repository.registrarUsuario(nuevoUsuario)
             regError = null
+            regRut = ""; regNombre = ""; regApellido = ""
+            regEmail = ""; regTelefono = ""; regPassword = ""
             onSuccess()
         }
     }
+
+    fun cerrarSesion(){
+        usuarioAutenticado = null
+    }
+}
+
+// Esta clase hace que viewmodel tome el repository obligatoriamente
+class AuthViewModelFactory(private val repository: UsuarioRepository) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T = AuthViewModel(repository) as T
 }
