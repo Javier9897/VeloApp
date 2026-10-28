@@ -45,7 +45,7 @@ fun LoginScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 24.dp)
     ) {
-        // ---- Logo y nombre de la app ----
+        // Logo y nombre de la app
         Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
                 shape = RoundedCornerShape(14.dp),
@@ -66,7 +66,7 @@ fun LoginScreen(
 
         Spacer(Modifier.height(36.dp))
 
-        // ---- Textos de presentación ----
+        // Textos de presentacion
         Text(
             "AGRICULTURA Y SILVICULTURA",
             style = MaterialTheme.typography.labelSmall,
@@ -94,7 +94,7 @@ fun LoginScreen(
         )
         Spacer(Modifier.height(16.dp))
 
-        // ---- Campo Usuario ----
+        // Campo de texto del Usuario
         Text("Usuario", style = MaterialTheme.typography.labelLarge)
         Spacer(Modifier.height(6.dp))
         OutlinedTextField(
@@ -120,7 +120,7 @@ fun LoginScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // ---- Campo Contraseña ----
+        // Campo de Texto de la contraseña
         Text("Contraseña", style = MaterialTheme.typography.labelLarge)
         Spacer(Modifier.height(6.dp))
         OutlinedTextField(
@@ -162,7 +162,7 @@ fun LoginScreen(
             Text("Recuperar contraseña")
         }
 
-        // ---- Mensaje de error ----
+        // Mensajes de errores
         viewModel.loginError?.let {
             Text(
                 it,
@@ -172,7 +172,7 @@ fun LoginScreen(
             )
         }
 
-        // ---- Botón iniciar sesión ----
+        // Boton para iniciar sesion
         Button(
             onClick = { viewModel.iniciarSesion(onLoginExitoso) },
             shape = RoundedCornerShape(14.dp),
@@ -185,7 +185,7 @@ fun LoginScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // ---- Separador "o" ----
+        // Separador "o" (Iniciar sesion o Crear cuenta)
         Row(verticalAlignment = Alignment.CenterVertically) {
             HorizontalDivider(Modifier.weight(1f), color = MaterialTheme.colorScheme.outline)
             Text(
@@ -199,7 +199,7 @@ fun LoginScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // ---- Botón crear cuenta ----
+        // Boton para crear cuenta
         Button(
             onClick = onIrARegistro,
             shape = RoundedCornerShape(14.dp),

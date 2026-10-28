@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.duoc.velo.model.Usuario
 import com.duoc.velo.repository.UsuarioRepository
 import kotlinx.coroutines.launch
+import com.duoc.velo.model.Rol
 
 class AuthViewModel(private val repository: UsuarioRepository): ViewModel(){
 
@@ -24,6 +25,7 @@ class AuthViewModel(private val repository: UsuarioRepository): ViewModel(){
     var regEmail by mutableStateOf("")
     var regTelefono by mutableStateOf("")
     var regPassword by mutableStateOf("")
+    var regRol by mutableStateOf(Rol.PRODUCTOR)
     var regError by mutableStateOf<String?>(null)
 
     var usuarioAutenticado by mutableStateOf<Usuario?>(null)
@@ -70,12 +72,13 @@ class AuthViewModel(private val repository: UsuarioRepository): ViewModel(){
                 apellido = regApellido.trim(),
                 email = regEmail.trim(),
                 telefono = regTelefono.trim(),
-                password = regPassword.trim()
+                password = regPassword.trim(),
+                rol = regRol
             )
             repository.registrarUsuario(nuevoUsuario)
             regError = null
             regRut = ""; regNombre = ""; regApellido = ""
-            regEmail = ""; regTelefono = ""; regPassword = ""
+            regEmail = ""; regTelefono = ""; regPassword = ""; regRol = Rol.PRODUCTOR
             onSuccess()
         }
     }

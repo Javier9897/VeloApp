@@ -18,7 +18,8 @@ class UsuarioRepository (private val dao: UsuarioDao) {
                 apellido = usuario.apellido,
                 email = usuario.email.lowercase(),
                 telefono = usuario.telefono,
-                password = usuario.password
+                password = usuario.password,
+                rol = usuario.rol
             )
         )
     }
