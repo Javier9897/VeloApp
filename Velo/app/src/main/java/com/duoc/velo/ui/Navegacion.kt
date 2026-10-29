@@ -30,7 +30,7 @@ fun Navegacion(viewModel: AuthViewModel) {
                         popUpTo("login") { inclusive = true }
                     }
                 },
-                onIrARegistro = { navController.navigate("registro") }
+                onIrARegistro = { navController.navigate("registro") } // Falta por crear
             )
         }
     }

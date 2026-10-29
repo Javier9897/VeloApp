@@ -9,7 +9,7 @@ class UsuarioRepository (private val dao: UsuarioDao) {
     private fun normalizarRut(rut: String): String =
         rut.replace(".", "").replace(" ", "").uppercase()
 
-    // Reguistrar usuario a la base de datos (rut sin puntos y email en minusculas)
+    // Registrar usuario a la base de datos (rut sin puntos y email en minusculas)
     suspend fun registrarUsuario(usuario: Usuario){
         dao.registrarUsuario(
             Usuario(

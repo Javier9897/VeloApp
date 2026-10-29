@@ -13,22 +13,26 @@ import com.duoc.velo.viewmodel.AuthViewModel
 
 class MainActivity : ComponentActivity() {
 
+    // Se construye la base de datos local con Room
     private val db by lazy {
         Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java,
-            "velo_db"
-        ).build()
+            applicationContext, // Contexto de la app
+            AppDatabase::class.java, // Se concenta con AppDataBase -> DAOs existentes
+            "velo_db" // Nombre de la base de datos local
+        ).build() // Finalmente se construye
     }
+
+    // Le pide datos al repository y recibe el DAO para usar sus herramientas
     private val repository by lazy { UsuarioRepository(db.usuarioDao()) }
-    private val viewModelCanciones by lazy { AuthViewModel(repository) }
+    // Controla la logica de la interfaz (si aprietas iniciar sesion se inicia)
+    private val viewModelVelo by lazy { AuthViewModel(repository) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             VeloTheme{ // <- aquí va el nombre de TU TEMA, lo puedes encontrar en ui/theme/Theme.kt
-                Navegacion(viewModelCanciones)
+                Navegacion(viewModelVelo)
             }
         }
     }

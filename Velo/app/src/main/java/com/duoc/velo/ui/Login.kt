@@ -103,7 +103,7 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             placeholder = {
-                Text("Ingresa tu usuario", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Ingresa tu Rut o Email", color = MaterialTheme.colorScheme.onSurfaceVariant)
             },
             shape = RoundedCornerShape(14.dp),
             keyboardOptions = KeyboardOptions(
@@ -156,7 +156,7 @@ fun LoginScreen(
         )
 
         TextButton(
-            onClick = { /* TODO: pantalla de recuperar contraseña */ },
+            onClick = { /* Todavia no se crea */ },
             modifier = Modifier.align(Alignment.End)
         ) {
             Text("Recuperar contraseña")
