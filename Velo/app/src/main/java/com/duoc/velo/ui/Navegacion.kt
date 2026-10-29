@@ -10,7 +10,17 @@ import com.duoc.velo.viewmodel.AuthViewModel
 fun Navegacion(viewModel: AuthViewModel) {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "login") {
+    NavHost(navController = navController, startDestination = "bienvenida") {
+
+        composable("bienvenida") {
+            InicioScreen(
+                onComenzar = {
+                    navController.navigate("login") {
+                        popUpTo("bienvenida") { inclusive = true }
+                    }
+                }
+            )
+        }
 
         composable("login") {
             LoginScreen(
