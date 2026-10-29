@@ -10,13 +10,17 @@ import com.duoc.velo.viewmodel.AuthViewModel
 fun Navegacion(viewModel: AuthViewModel) {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "bienvenida") {
-
+    NavHost(
+        navController = navController,
+        startDestination = "bienvenida"
+    ) {
         composable("bienvenida") {
             InicioScreen(
                 onComenzar = {
                     navController.navigate("login") {
-                        popUpTo("bienvenida") { inclusive = true }
+                        popUpTo("bienvenida") {
+                            inclusive = true
+                        }
                     }
                 }
             )
@@ -27,11 +31,33 @@ fun Navegacion(viewModel: AuthViewModel) {
                 viewModel = viewModel,
                 onLoginExitoso = {
                     navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
+                        popUpTo("login") {
+                            inclusive = true
+                        }
                     }
                 },
-                onIrARegistro = { navController.navigate("registro") } // Falta por crear
+                onIrARegistro = {
+                    navController.navigate("registro") {
+                        launchSingleTop = true
+                    }
+                }
             )
+        }
+
+        composable("registro") {
+            RegistroScreen(
+                viewModel = viewModel,
+                onRegistroExitoso = {
+                    navController.popBackStack("login", false)
+                },
+                onVolver = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable("home") {
+            HomeScreen()
         }
     }
 }
