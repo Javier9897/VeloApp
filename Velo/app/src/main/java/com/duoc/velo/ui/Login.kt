@@ -172,6 +172,18 @@ fun LoginScreen(
             )
         }
 
+        // Mensaje de cuenta creada con exito
+        if (viewModel.loginError == null) {
+            viewModel.loginMensaje?.let {
+                Text(
+                    it,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+        }
+
         // Boton para iniciar sesion
         Button(
             onClick = { viewModel.iniciarSesion(onLoginExitoso) },
