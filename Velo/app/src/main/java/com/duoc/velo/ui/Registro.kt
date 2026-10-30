@@ -33,9 +33,13 @@ fun RegistroScreen(
     onVolver: () -> Unit
 ) {
     var mostrarPassword by rememberSaveable { mutableStateOf(false) }
+
+    // Variable para mostrar el modal
+    var mostrarModalExito by remember { mutableStateOf(false) }
+
     val cargando = viewModel.regLoading
 
-    // Abre la camara nativa y devuelve la foto (en tamaño pequeño). No necesita permisos ni archivos.
+    // Configuracion para la camara
     val camara = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicturePreview()
     ) { bitmap ->
@@ -122,9 +126,7 @@ fun RegistroScreen(
             ) {
                 FilterChip(
                     selected = viewModel.regRol == Rol.PRODUCTOR,
-                    onClick = {
-                        viewModel.regRol = Rol.PRODUCTOR
-                    },
+                    onClick = { viewModel.regRol = Rol.PRODUCTOR },
                     label = { Text("Productor") },
                     enabled = !cargando,
                     modifier = Modifier.weight(1f)
@@ -132,9 +134,7 @@ fun RegistroScreen(
 
                 FilterChip(
                     selected = viewModel.regRol == Rol.APLICADOR,
-                    onClick = {
-                        viewModel.regRol = Rol.APLICADOR
-                    },
+                    onClick = { viewModel.regRol = Rol.APLICADOR },
                     label = { Text("Aplicador") },
                     enabled = !cargando,
                     modifier = Modifier.weight(1f)
@@ -173,9 +173,7 @@ fun RegistroScreen(
                 value = viewModel.regEmail,
                 onValueChange = { viewModel.regEmail = it },
                 label = { Text("Correo electrónico") },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 singleLine = true,
                 enabled = !cargando,
                 modifier = Modifier.fillMaxWidth()
@@ -186,9 +184,7 @@ fun RegistroScreen(
                 onValueChange = { viewModel.regTelefono = it },
                 label = { Text("Teléfono") },
                 placeholder = { Text("+56 9 1234 5678") },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Phone
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 singleLine = true,
                 enabled = !cargando,
                 modifier = Modifier.fillMaxWidth()
@@ -199,14 +195,8 @@ fun RegistroScreen(
                 onValueChange = { viewModel.regPassword = it },
                 label = { Text("Contraseña") },
                 supportingText = { Text("Mínimo 8 caracteres") },
-                visualTransformation = if (mostrarPassword) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password
-                ),
+                visualTransformation = if (mostrarPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 singleLine = true,
                 enabled = !cargando,
                 modifier = Modifier.fillMaxWidth()
@@ -216,22 +206,14 @@ fun RegistroScreen(
                 value = viewModel.regConfirmPassword,
                 onValueChange = { viewModel.regConfirmPassword = it },
                 label = { Text("Confirmar contraseña") },
-                visualTransformation = if (mostrarPassword) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password
-                ),
+                visualTransformation = if (mostrarPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 singleLine = true,
                 enabled = !cargando,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = mostrarPassword,
                     onCheckedChange = { mostrarPassword = it },
@@ -241,24 +223,22 @@ fun RegistroScreen(
             }
 
             viewModel.regError?.let { mensaje ->
-                Text(
-                    text = mensaje,
-                    color = MaterialTheme.colorScheme.error
-                )
+                Text(text = mensaje, color = MaterialTheme.colorScheme.error)
             }
 
+            // Activacion del modal
             Button(
                 onClick = {
-                    viewModel.registrarUsuario(onRegistroExitoso)
+                    viewModel.registrarUsuario {
+                        mostrarModalExito = true
+                    }
                 },
                 enabled = !cargando,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
-                Text(
-                    if (cargando) "Registrando..." else "Registrarse"
-                )
+                Text(if (cargando) "Registrando..." else "Registrarse")
             }
 
             TextButton(
@@ -268,6 +248,27 @@ fun RegistroScreen(
             ) {
                 Text("¿Ya tienes cuenta? Inicia sesión")
             }
+        }
+
+        if (mostrarModalExito) {
+            AlertDialog(
+                onDismissRequest = {
+                    mostrarModalExito = false
+                    onRegistroExitoso()
+                },
+                title = { Text("¡Registro Exitoso!") },
+                text = { Text("Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            mostrarModalExito = false
+                            onRegistroExitoso()
+                        }
+                    ) {
+                        Text("Aceptar")
+                    }
+                }
+            )
         }
     }
 }
