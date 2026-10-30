@@ -4,12 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.room.Room
 import com.duoc.velo.model.AppDatabase
+import com.duoc.velo.model.SolicitudesDatabase
 import com.duoc.velo.repository.UsuarioRepository
 import com.duoc.velo.ui.Navegacion
 import com.duoc.velo.ui.theme.VeloTheme
 import com.duoc.velo.viewmodel.AuthViewModel
+import com.duoc.velo.viewmodel.AuthViewModelFactory
 
 class MainActivity : ComponentActivity() {
 
@@ -19,21 +22,20 @@ class MainActivity : ComponentActivity() {
             applicationContext, // Contexto de la app
             AppDatabase::class.java, // Se concenta con AppDataBase -> DAOs existentes
             "velo_db" // Nombre de la base de datos local
-        ).fallbackToDestructiveMigration(true)
+        ).addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build() // Finalmente se construye
     }
 
-    // Le pide datos al repository y recibe el DAO para usar sus herramientas
     private val repository by lazy { UsuarioRepository(db.usuarioDao()) }
-    // Controla la logica de la interfaz (si aprietas iniciar sesion se inicia)
-    private val viewModelVelo by lazy { AuthViewModel(repository) }
+    private val solicitudesDao by lazy { SolicitudesDatabase.obtener(applicationContext).dao() }
+    private val authViewModel: AuthViewModel by viewModels { AuthViewModelFactory(repository) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            VeloTheme{ // <- aquí va el nombre de TU TEMA, lo puedes encontrar en ui/theme/Theme.kt
-                Navegacion(viewModelVelo)
+            VeloTheme {
+                Navegacion(authViewModel, repository, solicitudesDao)
             }
         }
     }

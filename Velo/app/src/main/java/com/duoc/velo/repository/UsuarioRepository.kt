@@ -12,14 +12,9 @@ class UsuarioRepository (private val dao: UsuarioDao) {
     // Registrar usuario a la base de datos (rut sin puntos y email en minusculas)
     suspend fun registrarUsuario(usuario: Usuario){
         dao.registrarUsuario(
-            Usuario(
+            usuario.copy(
                 rut = normalizarRut(usuario.rut),
-                nombre = usuario.nombre,
-                apellido = usuario.apellido,
-                email = usuario.email.lowercase(),
-                telefono = usuario.telefono,
-                password = usuario.password,
-                rol = usuario.rol
+                email = usuario.email.lowercase()
             )
         )
     }
@@ -39,4 +34,7 @@ class UsuarioRepository (private val dao: UsuarioDao) {
     suspend fun obtenerUsuarioPorEmail(email: String): Usuario?{
         return dao.obtenerUsuarioPorEmail(email.lowercase())
     }
+
+    suspend fun actualizarFotoPerfil(rut: String, foto: ByteArray): Int =
+        dao.actualizarFotoPerfil(rut, foto)
 }

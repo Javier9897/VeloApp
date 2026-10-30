@@ -1,5 +1,6 @@
 package com.duoc.velo.viewmodel
 
+import android.graphics.Bitmap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -11,7 +12,6 @@ import com.duoc.velo.model.Usuario
 import com.duoc.velo.repository.UsuarioRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
-import android.graphics.Bitmap
 
 class AuthViewModel(
     private val repository: UsuarioRepository
@@ -35,7 +35,7 @@ class AuthViewModel(
     var regPassword by mutableStateOf("")
     var regConfirmPassword by mutableStateOf("")
     var regRol by mutableStateOf(Rol.PRODUCTOR)
-    var regFoto by mutableStateOf<Bitmap?>(null)   // se crea la variable para guardar la foto
+    var regFoto by mutableStateOf<Bitmap?>(null)
     var regError by mutableStateOf<String?>(null)
 
     var regLoading by mutableStateOf(false)
@@ -122,6 +122,7 @@ class AuthViewModel(
             rol = regRol
         )
 
+        val foto = regFoto
         regLoading = true
 
         viewModelScope.launch {
@@ -142,7 +143,7 @@ class AuthViewModel(
                     return@launch
                 }
 
-                repository.registrarUsuario(nuevoUsuario)
+                repository.registrarUsuario(nuevoUsuario.copy(fotoPerfil = foto?.let { codificarFoto(it) }))
 
                 loginEmail = nuevoUsuario.email
                 loginPassword = ""
@@ -180,6 +181,12 @@ class AuthViewModel(
         loginPassword = ""
         loginError = null
         loginMensaje = null
+    }
+
+    internal fun aplicarFotoPerfil(usuarioOriginal: Usuario, foto: ByteArray) {
+        if (usuarioAutenticado === usuarioOriginal) {
+            usuarioAutenticado = usuarioOriginal.copy(fotoPerfil = foto)
+        }
     }
 }
 

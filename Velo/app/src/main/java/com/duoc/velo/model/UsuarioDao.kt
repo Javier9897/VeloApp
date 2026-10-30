@@ -21,4 +21,6 @@ interface UsuarioDao {
     @Query("SELECT * FROM usuarios WHERE email = :email LIMIT 1")
     suspend fun obtenerUsuarioPorEmail(email: String): Usuario?
 
+    @Query("UPDATE usuarios SET fotoPerfil = :foto WHERE rut = :rut")
+    suspend fun actualizarFotoPerfil(rut: String, foto: ByteArray): Int
 }

@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "usuarios")
-class Usuario(
+data class Usuario(
     @PrimaryKey
     val rut: String,
     var nombre: String,
@@ -12,6 +12,6 @@ class Usuario(
     var email: String,
     var telefono: String,
     var password: String,
-    val rol : Rol
-) {
-}
+    val rol: Rol,
+    val fotoPerfil: ByteArray? = null
+)
