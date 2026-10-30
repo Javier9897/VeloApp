@@ -151,9 +151,13 @@ class AuthViewModel(
 
                 limpiarRegistro()
                 onSuccess()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("VELO", "Error al registrar", e)
                 regError = "No se pudo crear la cuenta. Inténtalo nuevamente"
+            } finally {
+                regLoading = false
             }
         }
     }
