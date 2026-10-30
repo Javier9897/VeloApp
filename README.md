@@ -24,11 +24,30 @@ Para hacer que un modelo se transforme a una tabla de base de datos se utiliza *
 
 ## DAOs
 
+El **DAO o Data Access Object** es donde se define todos los metodos SQL que tendra nuestro proyecto para que luego Room pueda "leerlo" e implementarlo automaticamente en la base de datos. Estos archivos se declaran con @Dao para que el programa detecte que es un archivo de este tipo.
 
+Ejemplo:
+
+```Kotlin
+    // Si en el caso de que el rut ya exista se remplazara los datos
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun registrarUsuario(usuario: Usuario)
+```
 
 ## AppDatabase
 
+Es el encargado de todas las tablas (que estén definidas como @Entity) también accede a los DAOs del proyecto y además se asegura que haya solo una única conexión a la base de datos.
 
+Ejemplo de nuestro proyecto:
+
+```Kotlin
+@Database(entities = [Usuario::class], version = 2) // Define las entidades (tablas) y la versión de la BD
+abstract class AppDatabase : RoomDatabase() {       // Clase abstracta central que extiende de RoomDatabase
+    
+    // Provee la instancia del DAO para acceder a las consultas SQL
+    abstract fun usuarioDao(): UsuarioDao
+}
+```
 
 ## Autores
 - Javier Fuentealba
