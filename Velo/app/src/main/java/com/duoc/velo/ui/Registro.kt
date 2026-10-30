@@ -1,7 +1,16 @@
 package com.duoc.velo.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import com.duoc.velo.model.Rol
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,6 +34,17 @@ fun RegistroScreen(
 ) {
     var mostrarPassword by rememberSaveable { mutableStateOf(false) }
     val cargando = viewModel.regLoading
+
+    // Abre la camara nativa y devuelve la foto (en tamaño pequeño). No necesita permisos ni archivos.
+    val camara = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            viewModel.regFoto = bitmap
+        }
+    }
+
+    val foto = viewModel.regFoto
 
     BackHandler {
         if (!cargando) {
@@ -54,6 +74,45 @@ fun RegistroScreen(
             )
 
             Text("Completa tus datos para registrarte.")
+
+            // Boton para abrir la camara en registro
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Surface(
+                    onClick = { camara.launch(null) },
+                    enabled = !cargando,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+                    modifier = Modifier.size(96.dp)
+                ) {
+                    if (foto != null) {
+                        Image(
+                            bitmap = foto.asImageBitmap(),
+                            contentDescription = "Foto de perfil",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Outlined.PhotoCamera,
+                                contentDescription = "Tomar foto",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    if (foto == null) "Toca para tomar una foto" else "Toca para cambiarla",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             Text("Tipo de cuenta")
 

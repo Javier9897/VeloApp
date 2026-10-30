@@ -11,6 +11,7 @@ import com.duoc.velo.model.Usuario
 import com.duoc.velo.repository.UsuarioRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import android.graphics.Bitmap
 
 class AuthViewModel(
     private val repository: UsuarioRepository
@@ -34,6 +35,7 @@ class AuthViewModel(
     var regPassword by mutableStateOf("")
     var regConfirmPassword by mutableStateOf("")
     var regRol by mutableStateOf(Rol.PRODUCTOR)
+    var regFoto by mutableStateOf<Bitmap?>(null)   // se crea la variable para guardar la foto
     var regError by mutableStateOf<String?>(null)
 
     var regLoading by mutableStateOf(false)
@@ -165,6 +167,7 @@ class AuthViewModel(
         regPassword = ""
         regConfirmPassword = ""
         regRol = Rol.PRODUCTOR
+        regFoto = null
         regError = null
     }
 
