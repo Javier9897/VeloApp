@@ -149,12 +149,9 @@ class AuthViewModel(
 
                 limpiarRegistro()
                 onSuccess()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                android.util.Log.e("VELO", "Error al registrar", e)
                 regError = "No se pudo crear la cuenta. Inténtalo nuevamente"
-            } finally {
-                regLoading = false
             }
         }
     }
@@ -188,7 +185,6 @@ class AuthViewModelFactory(
         if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
             return AuthViewModel(repository) as T
         }
-
         throw IllegalArgumentException("ViewModel desconocido")
     }
 }

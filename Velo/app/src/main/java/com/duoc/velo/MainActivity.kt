@@ -19,7 +19,8 @@ class MainActivity : ComponentActivity() {
             applicationContext, // Contexto de la app
             AppDatabase::class.java, // Se concenta con AppDataBase -> DAOs existentes
             "velo_db" // Nombre de la base de datos local
-        ).build() // Finalmente se construye
+        ).fallbackToDestructiveMigration(true)
+            .build() // Finalmente se construye
     }
 
     // Le pide datos al repository y recibe el DAO para usar sus herramientas

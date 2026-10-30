@@ -13,7 +13,7 @@ class UsuarioRepository (private val dao: UsuarioDao) {
     suspend fun registrarUsuario(usuario: Usuario){
         dao.registrarUsuario(
             Usuario(
-                rut = usuario.rut,
+                rut = normalizarRut(usuario.rut),
                 nombre = usuario.nombre,
                 apellido = usuario.apellido,
                 email = usuario.email.lowercase(),
