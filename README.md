@@ -36,7 +36,7 @@ Ejemplo:
 
 ## AppDatabase
 
-Es el encargado de todas las tablas (que estén definidas como @Entity) también accede a los DAOs del proyecto y además se asegura que haya solo una única conexión a la base de datos.
+Es el encargado de conectar todas las tablas (que estén definidas como @Entity) también accede a los DAOs del proyecto y además se asegura que haya solo una única conexión a la base de datos.
 
 Ejemplo de nuestro proyecto:
 
@@ -48,6 +48,18 @@ abstract class AppDatabase : RoomDatabase() {       // Clase abstracta central q
     abstract fun usuarioDao(): UsuarioDao
 }
 ```
+
+## Repository
+
+Contiene la lógica de negocio y las reglas de procesamiento de datos de manera organizada, aislando las fuentes de datos para garantizar la escalabilidad y mantenibilidad del código a futuro.
+
+## ViewModel
+
+Este es el puente entre la interfaz (**UI**) y la lógica del proyecto (**repository**), reteniendo el estado de la UI frente a cambios de configuración y aislando los eventos de usuario mediante corrutinas de ciclo de vida (utilizando viewModelScope).
+
+## UI
+
+Contiene la interfaz de usuario gráfica desarrollada con **Jetpack Compose**. Agrupa las pantallas y componentes visuales (formularios, botones, textos y estilos) y reacciona en tiempo real a los cambios de estado provenientes del **ViewModel**
 
 ## Autores
 - Javier Fuentealba
