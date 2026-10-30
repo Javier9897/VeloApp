@@ -61,7 +61,7 @@ fun LoginScreen(
                 }
             }
             Spacer(Modifier.width(12.dp))
-            Text("TecMundo Connect", style = MaterialTheme.typography.titleLarge)
+            Text("Velo", style = MaterialTheme.typography.titleLarge)
         }
 
         Spacer(Modifier.height(36.dp))

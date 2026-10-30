@@ -41,7 +41,7 @@ fun HomeScreen() {
                 }
             }
             Spacer(Modifier.width(12.dp))
-            Text("TecMundo Connect", style = MaterialTheme.typography.titleMedium)
+            Text("Velo", style = MaterialTheme.typography.titleMedium)
         }
 
         Spacer(Modifier.height(28.dp))

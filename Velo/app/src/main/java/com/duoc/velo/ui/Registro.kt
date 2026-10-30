@@ -63,7 +63,7 @@ fun RegistroScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "TecMundo Connect",
+                text = "Velo",
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.titleMedium
             )
