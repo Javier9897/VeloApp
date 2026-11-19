@@ -61,6 +61,5 @@ Este es el puente entre la interfaz (**UI**) y la lógica del proyecto (**reposi
 
 Contiene la interfaz de usuario gráfica desarrollada con **Jetpack Compose**. Agrupa las pantallas y componentes visuales (formularios, botones, textos y estilos) y reacciona en tiempo real a los cambios de estado provenientes del **ViewModel**
 
-## Autores
-- Javier Fuentealba
+## Autor
 - Vicente Castro
