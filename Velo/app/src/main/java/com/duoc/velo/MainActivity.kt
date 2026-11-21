@@ -11,8 +11,9 @@ import com.duoc.velo.model.SolicitudesDatabase
 import com.duoc.velo.repository.UsuarioRepository
 import com.duoc.velo.ui.Navegacion
 import com.duoc.velo.ui.theme.VeloTheme
-import com.duoc.velo.viewmodel.AuthViewModel
-import com.duoc.velo.viewmodel.AuthViewModelFactory
+import com.duoc.velo.viewmodel.InicioSesionViewModel
+import com.duoc.velo.viewmodel.InicioSesionViewModelFactory
+import com.duoc.velo.viewmodel.SesionViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -28,14 +29,15 @@ class MainActivity : ComponentActivity() {
 
     private val repository by lazy { UsuarioRepository(db.usuarioDao()) }
     private val solicitudesDao by lazy { SolicitudesDatabase.obtener(applicationContext).dao() }
-    private val authViewModel: AuthViewModel by viewModels { AuthViewModelFactory(repository) }
+    private val inicioSesionViewModel: InicioSesionViewModel by viewModels { InicioSesionViewModelFactory(repository) }
+    private val sesionViewModel: SesionViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             VeloTheme {
-                Navegacion(authViewModel, repository, solicitudesDao)
+                Navegacion(inicioSesionViewModel, sesionViewModel, repository, solicitudesDao)
             }
         }
     }

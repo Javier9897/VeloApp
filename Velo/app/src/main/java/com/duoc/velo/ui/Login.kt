@@ -27,17 +27,25 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.duoc.velo.viewmodel.AuthViewModel
+import com.duoc.velo.model.Usuario
+import com.duoc.velo.viewmodel.InicioSesionViewModel
 
 @Composable
-fun LoginScreen(
-    viewModel: AuthViewModel,
-    onLoginExitoso: () -> Unit,
+internal fun LoginScreen(
+    viewModel: InicioSesionViewModel,
+    onLoginExitoso: (Usuario) -> Unit,
     onIrARegistro: () -> Unit
 ) {
-    val cargando = viewModel.loginLoading
+    val usuarioVerificado = viewModel.usuarioVerificado
+    val cargando = viewModel.loginLoading || usuarioVerificado != null
     var recuperar by rememberSaveable { mutableStateOf(false) }
-    val iniciarSesion = { viewModel.iniciarSesion(onLoginExitoso) }
+    val iniciarSesion = viewModel::iniciarSesion
+
+    LaunchedEffect(viewModel, usuarioVerificado) {
+        if (usuarioVerificado != null) {
+            viewModel.consumirUsuarioVerificado()?.let(onLoginExitoso)
+        }
+    }
 
     BackHandler(enabled = cargando) {}
 

@@ -32,19 +32,23 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.duoc.velo.model.Rol
-import com.duoc.velo.viewmodel.AuthViewModel
+import com.duoc.velo.viewmodel.RegistroViewModel
 
 @Composable
-fun RegistroScreen(
-    viewModel: AuthViewModel,
-    onRegistroExitoso: () -> Unit,
+internal fun RegistroScreen(
+    viewModel: RegistroViewModel,
+    onRegistroExitoso: (String) -> Unit,
     onVolver: () -> Unit
 ) {
     val cargando = viewModel.regLoading
     var errorCamara by rememberSaveable { mutableStateOf(false) }
-    val registrar = { viewModel.registrarUsuario(onRegistroExitoso) }
+    val registrar = viewModel::registrarUsuario
     val camara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { foto ->
         if (foto != null) viewModel.regFoto = foto
+    }
+
+    LaunchedEffect(viewModel.emailRegistrado) {
+        viewModel.consumirRegistroExitoso()?.let(onRegistroExitoso)
     }
 
     BackHandler { if (!cargando) onVolver() }

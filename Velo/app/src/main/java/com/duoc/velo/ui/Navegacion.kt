@@ -25,11 +25,14 @@ import androidx.navigation.navArgument
 import com.duoc.velo.model.Rol
 import com.duoc.velo.model.SolicitudesDao
 import com.duoc.velo.repository.UsuarioRepository
-import com.duoc.velo.viewmodel.AuthViewModel
+import com.duoc.velo.viewmodel.InicioSesionViewModel
 import com.duoc.velo.viewmodel.OfertaViewModel
 import com.duoc.velo.viewmodel.OfertaViewModelFactory
 import com.duoc.velo.viewmodel.PerfilViewModel
 import com.duoc.velo.viewmodel.PerfilViewModelFactory
+import com.duoc.velo.viewmodel.RegistroViewModel
+import com.duoc.velo.viewmodel.RegistroViewModelFactory
+import com.duoc.velo.viewmodel.SesionViewModel
 import com.duoc.velo.viewmodel.SolicitudViewModel
 import com.duoc.velo.viewmodel.SolicitudViewModelFactory
 
@@ -46,7 +49,8 @@ private object Ruta {
 
 @Composable
 internal fun Navegacion(
-    authViewModel: AuthViewModel,
+    inicioSesionViewModel: InicioSesionViewModel,
+    sesionViewModel: SesionViewModel,
     usuarioRepository: UsuarioRepository,
     solicitudesDao: SolicitudesDao
 ) {
@@ -55,7 +59,7 @@ internal fun Navegacion(
     val view = LocalView.current
     val entrada by nav.currentBackStackEntryAsState()
     val ruta = entrada?.destination?.route
-    val usuario by rememberUpdatedState(authViewModel.usuarioAutenticado)
+    val usuario by rememberUpdatedState(sesionViewModel.usuarioAutenticado)
     val volver: () -> Unit = { nav.popBackStack() }
 
     SideEffect {
@@ -81,18 +85,24 @@ internal fun Navegacion(
             }
             composable(Ruta.Login) {
                 LoginScreen(
-                    viewModel = authViewModel,
-                    onLoginExitoso = { nav.abrirRaiz(Ruta.Solicitudes) },
+                    viewModel = inicioSesionViewModel,
+                    onLoginExitoso = { cuenta ->
+                        sesionViewModel.abrirSesion(cuenta)
+                        nav.abrirRaiz(Ruta.Solicitudes)
+                    },
                     onIrARegistro = {
-                        authViewModel.limpiarRegistro()
                         nav.navigate(Ruta.Registro) { launchSingleTop = true }
                     }
                 )
             }
             composable(Ruta.Registro) {
+                val registro: RegistroViewModel = viewModel(factory = RegistroViewModelFactory(usuarioRepository))
                 RegistroScreen(
-                    viewModel = authViewModel,
-                    onRegistroExitoso = { nav.popBackStack(Ruta.Login, inclusive = false) },
+                    viewModel = registro,
+                    onRegistroExitoso = { correo ->
+                        inicioSesionViewModel.prepararTrasRegistro(correo)
+                        nav.popBackStack(Ruta.Login, inclusive = false)
+                    },
                     onVolver = volver
                 )
             }
@@ -142,10 +152,11 @@ internal fun Navegacion(
                         fotoGuardando = perfil.fotoGuardando,
                         fotoError = perfil.fotoError,
                         onGuardarFoto = { foto ->
-                            perfil.actualizarFotoPerfil(cuenta, foto, authViewModel::aplicarFotoPerfil)
+                            perfil.actualizarFotoPerfil(cuenta, foto, sesionViewModel::aplicarFotoPerfil)
                         },
                         onCerrarSesion = {
-                            authViewModel.cerrarSesion()
+                            sesionViewModel.cerrarSesion()
+                            inicioSesionViewModel.limpiarTrasCerrarSesion()
                             nav.abrirRaiz(Ruta.Login)
                         },
                         onVolver = { if (!perfil.fotoGuardando) volver() }
