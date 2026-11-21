@@ -5,22 +5,25 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.duoc.velo.model.Usuario
+import com.duoc.velo.repository.AccesoUsuario
 
 internal class SesionViewModel : ViewModel() {
-    var usuarioAutenticado by mutableStateOf<Usuario?>(null)
-        private set
+    private var acceso by mutableStateOf<AccesoUsuario?>(null)
+    val usuarioAutenticado: Usuario? get() = acceso?.usuario
+    val token: String? get() = acceso?.token
 
-    fun abrirSesion(usuario: Usuario) {
-        usuarioAutenticado = usuario
+    fun abrirSesion(accesoUsuario: AccesoUsuario) {
+        acceso = accesoUsuario
     }
 
     fun cerrarSesion() {
-        usuarioAutenticado = null
+        acceso = null
     }
 
     fun aplicarFotoPerfil(usuarioOriginal: Usuario, foto: ByteArray) {
-        if (usuarioAutenticado === usuarioOriginal) {
-            usuarioAutenticado = usuarioOriginal.copy(fotoPerfil = foto)
+        val sesionActual = acceso ?: return
+        if (sesionActual.usuario === usuarioOriginal) {
+            acceso = sesionActual.copy(usuario = usuarioOriginal.copy(fotoPerfil = foto))
         }
     }
 }

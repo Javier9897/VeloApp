@@ -2,8 +2,6 @@ package com.duoc.velo.ui
 
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -38,6 +37,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,6 +55,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.duoc.velo.R
+import com.duoc.velo.repository.leerFotoTerreno
 import com.duoc.velo.viewmodel.SolicitudViewModel
 import com.duoc.velo.viewmodel.opcionesAguaSolicitud
 import com.duoc.velo.viewmodel.productosSolicitud
@@ -62,29 +63,12 @@ import com.duoc.velo.viewmodel.tiposObstaculosSolicitud
 import com.duoc.velo.viewmodel.turnosSolicitud
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.IOException
 
 @Composable
 internal fun FotoTerreno(uri: String, modifier: Modifier = Modifier) {
     val resolver = LocalContext.current.contentResolver
     val bitmap by produceState<Bitmap?>(null, resolver, uri) {
-        value = withContext(Dispatchers.IO) {
-            val fuente = Uri.parse(uri)
-            val opciones = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            try {
-                resolver.openInputStream(fuente)?.use { BitmapFactory.decodeStream(it, null, opciones) }
-                opciones.inSampleSize = 1
-                while (maxOf(opciones.outWidth, opciones.outHeight) / opciones.inSampleSize > 768) {
-                    opciones.inSampleSize *= 2
-                }
-                opciones.inJustDecodeBounds = false
-                resolver.openInputStream(fuente)?.use { BitmapFactory.decodeStream(it, null, opciones) }
-            } catch (_: IOException) {
-                null
-            } catch (_: SecurityException) {
-                null
-            }
-        }
+        value = withContext(Dispatchers.IO) { leerFotoTerreno(resolver, uri) }
     }
 
     Surface(
@@ -132,10 +116,12 @@ private fun Opciones(
 }
 
 @Composable
-internal fun NuevaSolicitud(viewModel: SolicitudViewModel, volver: () -> Unit) {
+internal fun NuevaSolicitud(viewModel: SolicitudViewModel, volver: () -> Unit, abrirClima: () -> Unit) {
     val formulario by viewModel.formulario.collectAsStateWithLifecycle()
     val publicacion by viewModel.publicacion.collectAsStateWithLifecycle()
-    val bloqueado = publicacion.guardando || publicacion.creada
+    val edicion by viewModel.edicion.collectAsStateWithLifecycle()
+    val bloqueado = publicacion.guardando || publicacion.creada || edicion.cargando
+    val titulo = if (viewModel.modoEdicion) "Editar solicitud" else "Nueva solicitud"
     var eligiendoProducto by remember { mutableStateOf(false) }
     val resolver = LocalContext.current.contentResolver
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -152,24 +138,44 @@ internal fun NuevaSolicitud(viewModel: SolicitudViewModel, volver: () -> Unit) {
         if (publicacion.creada) volver()
     }
 
-    BackHandler(enabled = bloqueado) {}
+    BackHandler(enabled = bloqueado && !edicion.cargando) {}
+    if (edicion.cargando || edicion.error != null) {
+        Pagina(titulo = titulo, volver = volver) {
+            if (edicion.cargando) {
+                CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
+            } else {
+                Text(edicion.error.orEmpty(), color = MaterialTheme.colorScheme.error)
+                Accion("Reintentar", click = viewModel::cargarEdicion)
+            }
+        }
+        return
+    }
     Pagina(
-        titulo = "Nueva solicitud",
+        titulo = titulo,
         volver = { if (!bloqueado) volver() },
+        acciones = { TextButton(onClick = abrirClima, enabled = !bloqueado) { Text("Clima") } },
         pie = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 publicacion.error?.let { error ->
                     Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
                 Accion(
-                    if (bloqueado) "Guardando…" else "Crear solicitud",
+                    when {
+                        bloqueado -> "Guardando…"
+                        viewModel.modoEdicion -> "Guardar cambios"
+                        else -> "Crear solicitud"
+                    },
                     enabled = !bloqueado,
                     click = viewModel::publicar
                 )
             }
         }
     ) {
-        Text("Cuéntanos qué necesitas para tu próxima aplicación.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            if (viewModel.modoEdicion) "Actualiza los datos de tu próxima aplicación."
+            else "Cuéntanos qué necesitas para tu próxima aplicación.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Tipo de producto", style = MaterialTheme.typography.titleSmall)
             Box {

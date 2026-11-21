@@ -5,14 +5,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.duoc.velo.model.Oferta
 import com.duoc.velo.model.Rol
-import com.duoc.velo.model.SolicitudesDao
 import com.duoc.velo.model.Usuario
+import com.duoc.velo.repository.SolicitudesRepository
+import com.duoc.velo.repository.mensajeApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -28,12 +28,16 @@ internal data class EstadoOperacionOferta(
 )
 
 internal class OfertaViewModel(
-    private val dao: SolicitudesDao,
+    private val repositorio: SolicitudesRepository,
     private val solicitudId: String
 ) : ViewModel() {
-    val estado: StateFlow<EstadoOfertas> = dao.ofertas(solicitudId)
-        .map { EstadoOfertas(ofertas = it) }
-        .catch { emit(EstadoOfertas(error = "No se pudieron cargar las ofertas.")) }
+    val estado: StateFlow<EstadoOfertas> = repositorio.ofertas(solicitudId)
+        .map { resultado ->
+            resultado.fold(
+                onSuccess = { EstadoOfertas(ofertas = it) },
+                onFailure = { EstadoOfertas(error = it.mensajeApi("No se pudieron cargar las ofertas.")) }
+            )
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), EstadoOfertas())
 
     private val operacionMutable = MutableStateFlow(EstadoOperacionOferta())
@@ -43,7 +47,7 @@ internal class OfertaViewModel(
         if (usuario.rol != Rol.APLICADOR || precio !in 1L..9_999_999_999L) return
         ejecutar("No se pudo enviar la oferta. Vuelve a intentarlo.") {
             try {
-                dao.ofertar(
+                repositorio.ofertar(
                     Oferta(
                         solicitud = solicitudId,
                         aplicador = usuario.rut,
@@ -62,7 +66,7 @@ internal class OfertaViewModel(
     fun aceptar(usuario: Usuario, oferta: Oferta) {
         if (usuario.rol != Rol.PRODUCTOR || oferta.solicitud != solicitudId) return
         ejecutar("No se pudo aceptar la oferta. Vuelve a intentarlo.") {
-            if (dao.aceptar(solicitudId, usuario.rut, oferta.aplicador) == 0) {
+            if (!repositorio.aceptar(solicitudId, usuario.rut, oferta.aplicador)) {
                 "La solicitud ya cambió de estado."
             } else {
                 null
@@ -80,8 +84,8 @@ internal class OfertaViewModel(
                 mensaje = accion()
             } catch (cancelacion: CancellationException) {
                 throw cancelacion
-            } catch (_: Exception) {
-                mensaje = error
+            } catch (fallo: Exception) {
+                mensaje = fallo.mensajeApi(error)
             } finally {
                 operacionMutable.value = EstadoOperacionOferta(mensaje = mensaje)
             }
@@ -90,12 +94,12 @@ internal class OfertaViewModel(
 }
 
 internal class OfertaViewModelFactory(
-    private val dao: SolicitudesDao,
+    private val repositorio: SolicitudesRepository,
     private val solicitudId: String
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass == OfertaViewModel::class.java)
-        return OfertaViewModel(dao, solicitudId) as T
+        return OfertaViewModel(repositorio, solicitudId) as T
     }
 }

@@ -1,3 +1,4 @@
+import java.net.URI
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -6,6 +7,16 @@ plugins {
     id("com.google.devtools.ksp") version "2.2.10-2.0.2"
     alias(libs.plugins.kotlin.android)
 }
+
+val veloApiUrl = providers.gradleProperty("veloApiUrl").orElse("").get().trim().trimEnd('/')
+val veloApiUri = veloApiUrl.takeIf(String::isNotEmpty)?.let(::URI)
+val esApiLocal = veloApiUri?.scheme == "http" && veloApiUri.host in setOf("127.0.0.1", "localhost", "10.0.2.2")
+require(veloApiUri == null || (
+    (veloApiUri.scheme == "https" || esApiLocal) &&
+        veloApiUri.host != null && veloApiUri.userInfo == null &&
+        veloApiUri.path.isEmpty() && veloApiUri.query == null && veloApiUri.fragment == null
+)) { "Configura veloApiUrl con el origen HTTPS del servidor o con HTTP de loopback para desarrollo." }
+
 android {
     namespace = "com.duoc.velo"
     compileSdk {
@@ -22,9 +33,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "VELO_API_URL", "\"$veloApiUrl\"")
     }
 
     buildTypes {
+        debug {
+            enableUnitTestCoverage = true
+        }
         release {
             optimization {
                 enable = false
@@ -37,6 +52,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -57,6 +73,10 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.core.ktx)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.json.jvm)
+    testImplementation(libs.mockwebserver)
+    implementation(libs.retrofit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

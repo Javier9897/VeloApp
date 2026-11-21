@@ -1,7 +1,6 @@
 package com.duoc.velo.viewmodel
 
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -12,7 +11,10 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.duoc.velo.model.Rol
 import com.duoc.velo.model.Usuario
+import com.duoc.velo.model.validarRegistro
+import com.duoc.velo.repository.RegistroDuplicadoException
 import com.duoc.velo.repository.UsuarioRepository
+import com.duoc.velo.repository.mensajeApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -35,30 +37,8 @@ internal class RegistroViewModel(private val repository: UsuarioRepository) : Vi
 
     fun registrarUsuario() {
         if (regLoading || emailRegistrado != null) return
-        regError = null
-
-        if (
-            regRut.isBlank() ||
-            regNombre.isBlank() ||
-            regApellido.isBlank() ||
-            regEmail.isBlank() ||
-            regTelefono.isBlank() ||
-            regPassword.isBlank() ||
-            regConfirmPassword.isBlank()
-        ) {
-            regError = "Tienes que rellenar todos los campos"
-            return
-        }
-
-        if (regPassword.length < 8) {
-            regError = "La contraseña debe tener al menos 8 caracteres"
-            return
-        }
-
-        if (regPassword != regConfirmPassword) {
-            regError = "Las contraseñas no coinciden"
-            return
-        }
+        regError = validarRegistro(regRut, regNombre, regApellido, regEmail, regTelefono, regPassword, regConfirmPassword)
+        if (regError != null) return
 
         val nuevoUsuario = Usuario(
             rut = regRut.trim(),
@@ -74,24 +54,15 @@ internal class RegistroViewModel(private val repository: UsuarioRepository) : Vi
 
         viewModelScope.launch {
             try {
-                if (repository.obtenerUsuarioPorRut(nuevoUsuario.rut) != null) {
-                    regError = "El RUT ingresado ya está registrado"
-                    return@launch
-                }
-
-                if (repository.obtenerUsuarioPorEmail(nuevoUsuario.email) != null) {
-                    regError = "El correo ingresado ya está registrado"
-                    return@launch
-                }
-
                 repository.registrarUsuario(nuevoUsuario.copy(fotoPerfil = foto?.let { codificarFoto(it) }))
                 limpiarRegistro()
                 emailRegistrado = nuevoUsuario.email
             } catch (cancelacion: CancellationException) {
                 throw cancelacion
+            } catch (error: RegistroDuplicadoException) {
+                regError = error.message
             } catch (error: Exception) {
-                Log.e("VELO", "Error al registrar", error)
-                regError = "No se pudo crear la cuenta. Inténtalo nuevamente"
+                regError = error.mensajeApi("No se pudo crear la cuenta. Inténtalo nuevamente")
             } finally {
                 regLoading = false
             }

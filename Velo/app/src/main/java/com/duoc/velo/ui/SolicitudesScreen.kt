@@ -3,6 +3,7 @@ package com.duoc.velo.ui
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,10 +27,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -144,21 +147,26 @@ internal fun Detalle(
     u: Usuario,
     solicitudesViewModel: SolicitudViewModel,
     ofertasViewModel: OfertaViewModel,
-    volver: () -> Unit
+    volver: () -> Unit,
+    editar: () -> Unit
 ) {
     val productor = u.rol == Rol.PRODUCTOR
     val detalle by solicitudesViewModel.detalle.collectAsState()
     val estadoOfertas by ofertasViewModel.estado.collectAsState()
     val operacion by ofertasViewModel.operacion.collectAsState()
+    val eliminacion by solicitudesViewModel.eliminacion.collectAsState()
     var precio by rememberSaveable { mutableStateOf("") }
     var telefonoAlternativo by rememberSaveable { mutableStateOf<String?>(null) }
     var aplicadorPendiente by rememberSaveable { mutableStateOf<String?>(null) }
+    var confirmarEliminacion by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
 
     val actual = detalle.solicitud
     val lista = estadoOfertas.ofertas
     val enviando = operacion.enviando
     val enviada = lista?.firstOrNull { it.aplicador == u.rut }
+    val puedeModificar = productor && actual != null && actual.productor == u.rut &&
+        actual.aceptada == null && lista?.isEmpty() == true
     val monto = precio.toLongOrNull() ?: 0L
     val pie: (@Composable () -> Unit)? = if (!productor && actual != null && actual.aceptada == null && lista != null && enviada == null) {
         {
@@ -170,7 +178,15 @@ internal fun Detalle(
         null
     }
 
-    Pagina(titulo = if (productor) "Detalle solicitud" else "Detalle de solicitud", volver = volver, pie = pie) {
+    LaunchedEffect(eliminacion.eliminada) {
+        if (eliminacion.eliminada) volver()
+    }
+    BackHandler(enabled = eliminacion.eliminando || eliminacion.eliminada) {}
+    Pagina(
+        titulo = if (productor) "Detalle solicitud" else "Detalle de solicitud",
+        volver = { if (!eliminacion.eliminando && !eliminacion.eliminada) volver() },
+        pie = pie
+    ) {
         if (detalle.error != null) {
             Text(detalle.error.orEmpty(), color = MaterialTheme.colorScheme.error)
             return@Pagina
@@ -193,6 +209,19 @@ internal fun Detalle(
         }
         Panel { Resumen(actual, if (productor || actual.aceptada != null) actual.estado(lista.size) else "Sin ubicación") }
         if (productor) {
+            if (puedeModificar) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(editar, Modifier.weight(1f), enabled = !eliminacion.eliminando) {
+                        Text("Editar")
+                    }
+                    TextButton(
+                        onClick = { confirmarEliminacion = true },
+                        modifier = Modifier.weight(1f),
+                        enabled = !eliminacion.eliminando
+                    ) { Text(if (eliminacion.eliminando) "Eliminando…" else "Eliminar") }
+                }
+            }
+            eliminacion.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Text("Ofertas (${lista.size})", style = MaterialTheme.typography.titleLarge)
             if (lista.isEmpty()) Text("Las ofertas de los aplicadores aparecerán aquí.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             lista.forEach { oferta ->
@@ -233,6 +262,21 @@ internal fun Detalle(
             }
         }
         (telefonoAlternativo ?: operacion.mensaje)?.let { Text(it) }
+    }
+
+    if (confirmarEliminacion && puedeModificar) {
+        AlertDialog(
+            onDismissRequest = { confirmarEliminacion = false },
+            title = { Text("¿Eliminar solicitud?") },
+            text = { Text("La solicitud dejará de estar disponible para los aplicadores.") },
+            dismissButton = { TextButton(onClick = { confirmarEliminacion = false }) { Text("Cancelar") } },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmarEliminacion = false
+                    solicitudesViewModel.eliminar()
+                }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
+            }
+        )
     }
 
     val pendiente = if (productor && actual != null && actual.aceptada == null && !enviando) {

@@ -8,7 +8,14 @@ import androidx.activity.viewModels
 import androidx.room.Room
 import com.duoc.velo.model.AppDatabase
 import com.duoc.velo.model.SolicitudesDatabase
+import com.duoc.velo.repository.SolicitudesRepository
+import com.duoc.velo.repository.SolicitudesRepositoryLocal
+import com.duoc.velo.repository.SolicitudesRepositoryRemoto
 import com.duoc.velo.repository.UsuarioRepository
+import com.duoc.velo.repository.UsuarioRepositoryLocal
+import com.duoc.velo.repository.UsuarioRepositoryRemoto
+import com.duoc.velo.repository.VeloApi
+import com.duoc.velo.repository.codificarFotosTerreno
 import com.duoc.velo.ui.Navegacion
 import com.duoc.velo.ui.theme.VeloTheme
 import com.duoc.velo.viewmodel.InicioSesionViewModel
@@ -27,17 +34,32 @@ class MainActivity : ComponentActivity() {
             .build() // Finalmente se construye
     }
 
-    private val repository by lazy { UsuarioRepository(db.usuarioDao()) }
-    private val solicitudesDao by lazy { SolicitudesDatabase.obtener(applicationContext).dao() }
-    private val inicioSesionViewModel: InicioSesionViewModel by viewModels { InicioSesionViewModelFactory(repository) }
     private val sesionViewModel: SesionViewModel by viewModels()
+    private val api by lazy { BuildConfig.VELO_API_URL.takeIf(String::isNotBlank)?.let(::VeloApi) }
+    private val repository: UsuarioRepository by lazy {
+        val sesion = sesionViewModel
+        val remota = api
+        if (remota == null) UsuarioRepositoryLocal(db.usuarioDao())
+        else UsuarioRepositoryRemoto(remota) { sesion.token }
+    }
+    private val solicitudesRepository: SolicitudesRepository by lazy {
+        val sesion = sesionViewModel
+        val remota = api
+        if (remota == null) {
+            SolicitudesRepositoryLocal(SolicitudesDatabase.obtener(applicationContext).dao())
+        } else {
+            val resolver = applicationContext.contentResolver
+            SolicitudesRepositoryRemoto(remota, { fotos -> codificarFotosTerreno(resolver, fotos) }) { sesion.token }
+        }
+    }
+    private val inicioSesionViewModel: InicioSesionViewModel by viewModels { InicioSesionViewModelFactory(repository) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             VeloTheme {
-                Navegacion(inicioSesionViewModel, sesionViewModel, repository, solicitudesDao)
+                Navegacion(inicioSesionViewModel, sesionViewModel, repository, solicitudesRepository)
             }
         }
     }

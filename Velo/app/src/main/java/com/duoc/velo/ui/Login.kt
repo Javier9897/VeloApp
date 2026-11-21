@@ -27,13 +27,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.duoc.velo.model.Usuario
+import com.duoc.velo.repository.AccesoUsuario
 import com.duoc.velo.viewmodel.InicioSesionViewModel
 
 @Composable
 internal fun LoginScreen(
     viewModel: InicioSesionViewModel,
-    onLoginExitoso: (Usuario) -> Unit,
+    onLoginExitoso: (AccesoUsuario) -> Unit,
     onIrARegistro: () -> Unit
 ) {
     val usuarioVerificado = viewModel.usuarioVerificado
@@ -55,7 +55,7 @@ internal fun LoginScreen(
             title = { Text("Recuperar contraseña") },
             text = {
                 Text(
-                    "Las cuentas se guardan en este dispositivo y la recuperación por correo aún no está disponible. " +
+                    "La recuperación por correo aún no está disponible. " +
                         "Si olvidaste tu usuario, prueba con el RUT o el correo que registraste."
                 )
             },

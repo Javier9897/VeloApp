@@ -66,6 +66,36 @@ abstract class SolicitudesDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract suspend fun crear(solicitud: Solicitud)
 
+    @Query(
+        """
+        UPDATE Solicitud
+        SET producto = :producto, hectareas = :hectareas, agua = :agua, turno = :turno,
+            obstaculos = :obstaculos, comentario = :comentario, fotos = :fotos
+        WHERE id = :id AND productor = :productor AND aceptada IS NULL
+        AND NOT EXISTS (SELECT 1 FROM Oferta WHERE solicitud = :id)
+        """
+    )
+    abstract suspend fun actualizar(
+        id: String,
+        productor: String,
+        producto: String,
+        hectareas: Double,
+        agua: Boolean,
+        turno: String,
+        obstaculos: String,
+        comentario: String,
+        fotos: String
+    ): Int
+
+    @Query(
+        """
+        DELETE FROM Solicitud
+        WHERE id = :id AND productor = :productor AND aceptada IS NULL
+        AND NOT EXISTS (SELECT 1 FROM Oferta WHERE solicitud = :id)
+        """
+    )
+    abstract suspend fun eliminar(id: String, productor: String): Int
+
     @Query("SELECT * FROM Solicitud WHERE id = :id")
     protected abstract suspend fun buscar(id: String): Solicitud?
 

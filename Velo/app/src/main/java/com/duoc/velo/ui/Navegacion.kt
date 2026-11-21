@@ -23,7 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.duoc.velo.model.Rol
-import com.duoc.velo.model.SolicitudesDao
+import com.duoc.velo.repository.SolicitudesRepository
 import com.duoc.velo.repository.UsuarioRepository
 import com.duoc.velo.viewmodel.InicioSesionViewModel
 import com.duoc.velo.viewmodel.OfertaViewModel
@@ -42,9 +42,12 @@ private object Ruta {
     const val Registro = "registro"
     const val Solicitudes = "solicitudes"
     const val Nueva = "nueva-solicitud"
+    const val Editar = "editar-solicitud/{id}"
+    const val Clima = "clima"
     const val Perfil = "perfil"
     const val Detalle = "detalle/{id}"
     fun detalle(id: String) = "detalle/$id"
+    fun editar(id: String) = "editar-solicitud/$id"
 }
 
 @Composable
@@ -52,7 +55,7 @@ internal fun Navegacion(
     inicioSesionViewModel: InicioSesionViewModel,
     sesionViewModel: SesionViewModel,
     usuarioRepository: UsuarioRepository,
-    solicitudesDao: SolicitudesDao
+    solicitudesRepository: SolicitudesRepository
 ) {
     val nav = rememberNavController()
     val context = LocalContext.current
@@ -73,7 +76,7 @@ internal fun Navegacion(
         }
     }
     LaunchedEffect(ruta, usuario?.rut) {
-        if (usuario == null && ruta in listOf(Ruta.Solicitudes, Ruta.Nueva, Ruta.Perfil, Ruta.Detalle)) {
+        if (usuario == null && ruta in listOf(Ruta.Solicitudes, Ruta.Nueva, Ruta.Editar, Ruta.Clima, Ruta.Perfil, Ruta.Detalle)) {
             nav.abrirRaiz(Ruta.Login)
         }
     }
@@ -110,7 +113,7 @@ internal fun Navegacion(
                 val cuenta = usuario
                 if (cuenta != null) {
                     val solicitudes: SolicitudViewModel = viewModel(
-                        factory = SolicitudViewModelFactory(solicitudesDao, cuenta)
+                        factory = SolicitudViewModelFactory(solicitudesRepository, cuenta)
                     )
                     Listado(
                         viewModel = solicitudes,
@@ -124,22 +127,37 @@ internal fun Navegacion(
                 val cuenta = usuario
                 if (cuenta?.rol == Rol.PRODUCTOR) {
                     val solicitud: SolicitudViewModel = viewModel(
-                        factory = SolicitudViewModelFactory(solicitudesDao, cuenta)
+                        factory = SolicitudViewModelFactory(solicitudesRepository, cuenta)
                     )
-                    NuevaSolicitud(solicitud, volver)
+                    NuevaSolicitud(solicitud, volver) { nav.navigate(Ruta.Clima) { launchSingleTop = true } }
                 }
+            }
+            composable(Ruta.Editar, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+                val id = entry.arguments?.getString("id")
+                val cuenta = usuario
+                if (cuenta?.rol == Rol.PRODUCTOR && id != null) {
+                    val solicitud: SolicitudViewModel = viewModel(
+                        factory = SolicitudViewModelFactory(solicitudesRepository, cuenta, id, modoEdicion = true)
+                    )
+                    NuevaSolicitud(solicitud, volver) { nav.navigate(Ruta.Clima) { launchSingleTop = true } }
+                }
+            }
+            composable(Ruta.Clima) {
+                if (usuario?.rol == Rol.PRODUCTOR) ClimaScreen(onVolver = volver)
             }
             composable(Ruta.Detalle, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
                 val id = entry.arguments?.getString("id")
                 val cuenta = usuario
                 if (cuenta != null && id != null) {
                     val solicitud: SolicitudViewModel = viewModel(
-                        factory = SolicitudViewModelFactory(solicitudesDao, cuenta, id)
+                        factory = SolicitudViewModelFactory(solicitudesRepository, cuenta, id)
                     )
                     val ofertas: OfertaViewModel = viewModel(
-                        factory = OfertaViewModelFactory(solicitudesDao, id)
+                        factory = OfertaViewModelFactory(solicitudesRepository, id)
                     )
-                    Detalle(cuenta, solicitud, ofertas, volver)
+                    Detalle(cuenta, solicitud, ofertas, volver) {
+                        nav.navigate(Ruta.editar(id)) { launchSingleTop = true }
+                    }
                 }
             }
             composable(Ruta.Perfil) {

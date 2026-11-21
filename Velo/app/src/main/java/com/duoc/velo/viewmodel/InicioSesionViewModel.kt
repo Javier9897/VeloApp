@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.duoc.velo.model.Usuario
+import com.duoc.velo.repository.AccesoUsuario
 import com.duoc.velo.repository.UsuarioRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -22,7 +22,7 @@ internal class InicioSesionViewModel(
         private set
     var loginLoading by mutableStateOf(false)
         private set
-    var usuarioVerificado by mutableStateOf<Usuario?>(null)
+    var usuarioVerificado by mutableStateOf<AccesoUsuario?>(null)
         private set
 
     fun iniciarSesion() {
@@ -58,7 +58,7 @@ internal class InicioSesionViewModel(
         }
     }
 
-    fun consumirUsuarioVerificado(): Usuario? {
+    fun consumirUsuarioVerificado(): AccesoUsuario? {
         val usuario = usuarioVerificado
         usuarioVerificado = null
         return usuario
