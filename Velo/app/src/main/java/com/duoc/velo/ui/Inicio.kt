@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.duoc.velo.R
@@ -51,7 +52,7 @@ fun InicioScreen(onComenzar: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             LogoVelo(grande = true)
-            Text("TecMundo Connect", color = Color.White, style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.app_name), color = Color.White, style = MaterialTheme.typography.titleLarge)
             Text(
                 "AGRICULTURA Y SILVICULTURA",
                 modifier = Modifier.padding(top = 12.dp),
