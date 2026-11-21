@@ -1,65 +1,82 @@
-# Velo app (Proyecto de Desarrollo de Aplicaciones Móviles)
-Velo es una aplicación móvil desarrollada en **Jetpack Compose**, esta app esta pensada para la empresa **TecMundo** la cual se dedica a la venta de tecnologías para la agricultura y silvicultura, especialmente drones, robots y tecnologías de agricultura de precisión.
+# Velo App
 
-## Antes de Comenzar
-Para ejecutar el programa se recomienda el uso de **Android Studio** junto con un **emulador de Android** (preferiblemente el modelo **Pixel 7**) o un dispositivo físico. Finalmente clonar el proyecto y sincronizarlo de manera correcta.
+> Esta rama ejecuta Velo en modo local con Room. Las secciones de API y firma documentan los pasos de la versión de Experiencia 3 en preparación.
 
-## Modelos
+Velo conecta a productores agrícolas y aplicadores. Un productor puede publicar una solicitud de aplicación con su superficie, turno, obstáculos y fotos. Un aplicador consulta las solicitudes disponibles y ofrece un precio por hectárea. El productor revisa las ofertas y acepta una.
 
-Los modelos de la app están configuradas con **Room** (Es una base de datos local del emulador o dispositivo), la cual nos ayudara a crear los modelos de forma automática a la base de datos.
+## Arquitectura
 
-Para hacer que un modelo se transforme a una tabla de base de datos se utiliza **@Entity** que esta nos dice que el modelo será una entidad y se mapeara automáticamente como una tabla en la base de datos.
+- `Velo/` contiene la aplicación Android en Kotlin con Jetpack Compose y navegación por rol.
+- `ui` presenta las pantallas, observa el estado y gestiona acciones propias del dispositivo. Los ViewModels administran formularios, sesión, carga y errores según su responsabilidad.
+- Los repositorios conectan los ViewModels con Room en modo local o con la API REST cuando se configura un servidor. Ambos modos usan almacenes independientes.
+- `backend/` guarda cuentas, solicitudes, ofertas y fotos en SQLite. La API autentica mediante un token temporal y comprueba el rol y la propiedad en cada operación protegida.
 
->---
->[Usuario]
-> - rut(Primary Key) : String,
-> - nombre : String,
-> - apellido : String,
-> - email : String,
-> - telefono : String,
-> - password : String,
-> - rol : Rol
->
->---
+La cámara se usa para tomar una foto durante el registro. El selector de archivos de Android permite adjuntar fotos del terreno con acceso persistente. También se puede cambiar la foto de perfil desde el selector de fotos. El lanzador usa un ícono adaptativo propio.
 
-## DAOs
+## Configuración y prueba
 
-El **DAO o Data Access Object** es donde se define todos los metodos SQL que tendra nuestro proyecto para que luego Room pueda "leerlo" e implementarlo automaticamente en la base de datos. Estos archivos se declaran con @Dao para que el programa detecte que es un archivo de este tipo.
+1. Abre `Velo/` en Android Studio con JDK 21 y SDK 37.1.
+2. Para usar la API de desarrollo, inicia el servidor desde la raíz del repositorio.
 
-Ejemplo:
+   ```powershell
+   python backend/velo_api.py --port 8080 --db backend/data/velo.sqlite3
+   ```
 
-```Kotlin
-    // Si en el caso de que el rut ya exista se remplazara los datos
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun registrarUsuario(usuario: Usuario)
+3. En otra terminal, conecta el teléfono por ADB y habilita el reenvío al servidor del equipo.
+
+   ```powershell
+   adb reverse tcp:8080 tcp:8080
+   cd Velo
+   .\gradlew.bat :app:assembleDebug "-PveloApiUrl=http://127.0.0.1:8080"
+   ```
+
+   En el emulador oficial también puedes usar `-PveloApiUrl=http://10.0.2.2:8080`. Si omites la propiedad, la app usa Room sin conexión al servidor.
+
+4. Registra un productor y un aplicador con cuentas distintas. Con el productor publica una solicitud. Cambia al aplicador, abre la solicitud y envía una oferta. Vuelve a la cuenta del productor y acepta la oferta.
+
+## API
+
+Android consume nueve operaciones en siete rutas distintas bajo `/api/v1`. El servidor incluye una ruta adicional de diagnóstico.
+
+| Método | Ruta | Uso en la app |
+| --- | --- | --- |
+| POST | `/auth/register` | Crear cuenta |
+| POST | `/auth/login` | Iniciar sesión |
+| GET | `/solicitudes` | Listar solicitudes |
+| POST | `/solicitudes` | Publicar solicitud |
+| GET | `/solicitudes/{id}` | Consultar el detalle |
+| GET | `/solicitudes/{id}/ofertas` | Consultar ofertas |
+| POST | `/solicitudes/{id}/ofertas` | Enviar oferta |
+| POST | `/solicitudes/{id}/aceptacion` | Aceptar oferta |
+| POST | `/perfil/foto` | Cambiar foto de perfil |
+
+La documentación del directorio backend describirá los datos de las rutas, el puerto y el volumen persistente para el despliegue.
+
+## Pruebas y APK firmado
+
+Pruebas unitarias Android desde `Velo/`.
+
+```powershell
+.\gradlew.bat :app:testDebugUnitTest
 ```
 
-## AppDatabase
+Pruebas de integración HTTP desde `backend/`.
 
-Es el encargado de conectar todas las tablas (que estén definidas como @Entity) también accede a los DAOs del proyecto y además se asegura que haya solo una única conexión a la base de datos.
-
-Ejemplo de nuestro proyecto:
-
-```Kotlin
-@Database(entities = [Usuario::class], version = 2) // Define las entidades (tablas) y la versión de la BD
-abstract class AppDatabase : RoomDatabase() {       // Clase abstracta central que extiende de RoomDatabase
-    
-    // Provee la instancia del DAO para acceder a las consultas SQL
-    abstract fun usuarioDao(): UsuarioDao
-}
+```powershell
+python -m unittest -v
 ```
 
-## Repository
+Para un APK de entrega, configura una API HTTPS accesible desde el teléfono y un almacén de claves de release. Completa `VELO_SIGNING_STORE_FILE`, `VELO_SIGNING_STORE_PASSWORD`, `VELO_SIGNING_KEY_ALIAS` y `VELO_SIGNING_KEY_PASSWORD` con variables de entorno locales.
 
-Contiene la lógica de negocio y las reglas de procesamiento de datos de manera organizada, aislando las fuentes de datos para garantizar la escalabilidad y mantenibilidad del código a futuro.
+```powershell
+.\gradlew.bat :app:assembleRelease "-PveloApiUrl=https://tu-servidor.example"
+apksigner verify --verbose app/build/outputs/apk/release/app-release.apk
+```
 
-## ViewModel
+El APK firmado se genera en `Velo/app/build/outputs/apk/release/app-release.apk`. Conserva el almacén de claves fuera del repositorio para firmar futuras actualizaciones con el mismo certificado.
 
-Este es el puente entre la interfaz (**UI**) y la lógica del proyecto (**repository**), reteniendo el estado de la UI frente a cambios de configuración y aislando los eventos de usuario mediante corrutinas de ciclo de vida (utilizando viewModelScope).
-
-## UI
-
-Contiene la interfaz de usuario gráfica desarrollada con **Jetpack Compose**. Agrupa las pantallas y componentes visuales (formularios, botones, textos y estilos) y reacciona en tiempo real a los cambios de estado provenientes del **ViewModel**
+[Tablero VeloApp en Trello](https://trello.com/b/gBI1NmLN)
 
 ## Autor
+
 - Vicente Castro
