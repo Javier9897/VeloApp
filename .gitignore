@@ -3,6 +3,12 @@
 *.ap_
 *.aab
 
+# Private signing material
+*.jks
+*.keystore
+*.p12
+*.dpapi
+
 # Files for the Dalvik VM
 *.dex
 

@@ -17,6 +17,15 @@ require(veloApiUri == null || (
         veloApiUri.path.isEmpty() && veloApiUri.query == null && veloApiUri.fragment == null
 )) { "Configura veloApiUrl con el origen HTTPS del servidor o con HTTP de loopback para desarrollo." }
 
+val releaseStoreFile = providers.environmentVariable("VELO_SIGNING_STORE_FILE").orNull
+val releaseStorePassword = providers.environmentVariable("VELO_SIGNING_STORE_PASSWORD").orNull
+val releaseKeyAlias = providers.environmentVariable("VELO_SIGNING_KEY_ALIAS").orNull
+val releaseKeyPassword = providers.environmentVariable("VELO_SIGNING_KEY_PASSWORD").orNull
+val releaseSigningValues = listOf(releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword)
+require(releaseSigningValues.all { it.isNullOrBlank() } || releaseSigningValues.none { it.isNullOrBlank() }) {
+    "Para firmar Velo en release, configura las cuatro variables VELO_SIGNING_*."
+}
+
 android {
     namespace = "com.duoc.velo"
     compileSdk {
@@ -36,11 +45,22 @@ android {
         buildConfigField("String", "VELO_API_URL", "\"$veloApiUrl\"")
     }
 
+    val veloReleaseSigning = releaseStoreFile?.takeIf(String::isNotBlank)?.let { path ->
+        signingConfigs.create("veloRelease") {
+            storeFile = file(path)
+            storeType = "JKS"
+            storePassword = releaseStorePassword
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
+        }
+    }
+
     buildTypes {
         debug {
             enableUnitTestCoverage = true
         }
         release {
+            signingConfig = veloReleaseSigning
             optimization {
                 enable = false
             }

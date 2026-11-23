@@ -61,7 +61,7 @@ Desde `Velo/`, ejecuta las pruebas unitarias y genera el informe de cobertura de
 .\gradlew.bat :app:testDebugUnitTest :app:createDebugUnitTestCoverageReport
 ```
 
-El informe se genera bajo `Velo/app/build/reports/coverage/`.
+El informe se genera bajo `Velo/app/build/reports/coverage/`. La verificación de entrega registró 35 pruebas unitarias de Android aprobadas y 80,87 % de cobertura de líneas en ViewModels y repositorios combinados (630 de 779 líneas).
 
 Desde `backend/`, ejecuta las pruebas HTTP y de persistencia del servicio Spring Boot.
 
@@ -69,7 +69,54 @@ Desde `backend/`, ejecuta las pruebas HTTP y de persistencia del servicio Spring
 .\mvnw.cmd test
 ```
 
+Las 3 pruebas de integración de Spring Boot pasaron. La comprobación HTTP verificó las 11 operaciones que usa la app y el endpoint de salud con datos de prueba.
+
 [Tablero VeloApp en Trello](https://trello.com/b/gBI1NmLN)
+
+## Generar y verificar el APK firmado
+
+Usa JDK 21, Android SDK 37.1 y un almacén JKS privado. Configura estas variables de entorno en la terminal de compilación.
+
+| Variable | Valor |
+| --- | --- |
+| VELO_SIGNING_STORE_FILE | Ruta absoluta del archivo JKS |
+| VELO_SIGNING_STORE_PASSWORD | Contraseña del almacén |
+| VELO_SIGNING_KEY_ALIAS | Alias de la clave |
+| VELO_SIGNING_KEY_PASSWORD | Contraseña de la clave |
+
+La versión de entrega se conecta a Spring Boot por USB. Desde la carpeta Velo, genera el release con la dirección local de la API.
+
+    .\gradlew.bat --no-configuration-cache :app:assembleRelease "-PveloApiUrl=http://127.0.0.1:8081"
+
+El APK firmado se genera en Velo/app/build/outputs/apk/release/app-release.apk. Verifica la firma con apksigner de Android SDK Build Tools.
+
+    apksigner verify --verbose --print-certs .\app\build\outputs\apk\release\app-release.apk
+
+La clave de firma y sus contraseñas se guardan fuera del repositorio. El JKS de Velo usa el alias `velo-release`.
+
+Huella SHA-256 de `Velo-release.apk` para comparar el archivo entregado. `340F6CF55AD81C5B96BAFCD1528CE1C10DADDAB29EEC7907E3F029CF90C1EE66`
+
+![Salida de apksigner al verificar Velo-release.apk](docs/entrega/firma-apk.png)
+
+### Ejecutar el APK de entrega en un teléfono Android
+
+1. Desde la raíz del repositorio, abre una terminal para Spring Boot y déjala abierta.
+
+       cd backend
+       .\mvnw.cmd spring-boot:run
+
+2. Confirma que la API responde en el PC. En otra terminal, ejecuta:
+
+       Invoke-RestMethod http://127.0.0.1:8081/api/v1/salud
+
+3. En el teléfono, habilita la depuración USB, conéctalo con un cable de datos y acepta la autorización. Ejecuta ADB desde Android SDK Platform-Tools. Copia el número de serie del teléfono que aparece con estado device.
+
+       adb devices -l
+       $serial = 'SERIAL_DEL_TELEFONO'
+       adb -s $serial reverse tcp:8081 tcp:8081
+       adb -s $serial install -r 'RUTA_DEL_APK_FIRMADO'
+
+4. Abre Velo y mantén el cable conectado y Spring Boot en ejecución. Registra cuentas distintas de productor y aplicador en la API. Publica una solicitud con el productor, envía una oferta con el aplicador y vuelve al productor para aceptarla. Vuelve a aplicar adb reverse si desconectas el USB.
 
 ## Autor
 
